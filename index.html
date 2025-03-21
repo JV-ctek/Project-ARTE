@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>//_SYSTEM_PORTFOLIO_ACCESS</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+    <style>
+        body {
+            margin: 0;
+            background: #001100;
+            overflow: hidden;
+            font-family: 'Courier New', monospace;
+            color: #00ff00;
+        }
+        #crt {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 999;
+            background: linear-gradient(rgba(0, 32, 0, 0.1) 50%, rgba(0, 0, 0, 0.25) 50%),
+                        linear-gradient(90deg, rgba(0, 255, 0, 0.03), rgba(0, 255, 0, 0.01));
+            background-size: 100% 4px, 4px 100%;
+            animation: scanline 0.1s linear infinite;
+        }
+        #terminal {
+            padding: 2rem;
+            text-shadow: 0 0 8px #00ff0040;
+        }
+        .prompt {
+            color: #00ff00;
+            border-bottom: 2px solid #00ff00;
+            margin: 1rem 0;
+            cursor: pointer;
+        }
+        @keyframes scanline {
+            0% { background-position: 0 0; }
+        }
+    </style>
+</head>
+<body>
+    <div id="crt"></div>
+    <div id="terminal"></div>
+
+    <script>
+        const sketches = [
+            { id: "-RG47tNtH", code: "CYBER_PATTERNS_VAULT" },
+            { id: "6AnsZwZJ8", code: "NEURAL_TOPOGRAPHY" },
+            { id: "PBNU51c0S", code: "QUANTUM_STRINGFLOW" }
+        ];
+
+        function setup() {
+            createCanvas(windowWidth, windowHeight).hide();
+            terminalBootSequence();
+        }
+
+        function terminalBootSequence() {
+            const term = document.getElementById('terminal');
+            let lines = [
+                "INITIALIZING Mjölnir OS v7.4.3...",
+                "MOUNTING /dev/artifacts...",
+                "✓ LOADED Tycho AI Module",
+                "ACCESS LEVEL: BLACK OPERATIVE",
+                "3 ARTIFACTS DETECTED IN ARCHIVES:"
+            ];
+
+            sketches.forEach((sketch, i) => {
+                lines.push(`${i+1}. [${sketch.code}] <-- ${"■".repeat(3+i)}-->`);
+            });
+
+            lines.push("\nSELECT ARTIFACT >");
+            
+            typewriterEffect(lines.join('\n'), term, () => {
+                sketches.forEach((sketch, i) => {
+                    const prompt = document.createElement('div');
+                    prompt.className = 'prompt';
+                    prompt.innerHTML = `./access --artifact=${sketch.code}`;
+                    prompt.onclick = () => loadSketch(sketch.id);
+                    term.appendChild(prompt);
+                });
+            });
+        }
+
+        function typewriterEffect(text, container, callback) {
+            let index = 0;
+            const typer = setInterval(() => {
+                container.innerHTML = text.substring(0, index) + (index % 2 ? '_' : '');
+                if(index++ >= text.length) {
+                    clearInterval(typer);
+                    if(callback) callback();
+                }
+            }, 30);
+        }
+
+        function loadSketch(sketchId) {
+            document.body.innerHTML = `
+                <div id="crt"></div>
+                <div style="position:fixed; top:10px; left:10px; color:#0f0; cursor:pointer;" 
+                     onclick="location.reload()">
+                    [RETURN TO TERMINAL]
+                </div>
+                <iframe src="https://editor.p5js.org/JVA/embed/${sketchId}"
+                        style="width:100vw; height:100vh; border:none;">
+                </iframe>
+            `;
+        }
+    </script>
+</body>
+</html>
