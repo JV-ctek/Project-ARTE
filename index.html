@@ -5,140 +5,228 @@
     <title>//_SYSTEM_PORTFOLIO_ACCESS</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
     <style>
-        body {
-            margin: 0;
-            background: #001100;
+        body { 
+            margin: 0; 
+            background: #000; 
             overflow: hidden;
             font-family: 'Courier New', monospace;
-            color: #00ff00;
         }
         #crt {
             position: fixed;
-            top: 0;
-            left: 0;
             width: 100%;
             height: 100%;
+            background: repeating-linear-gradient(
+                0deg,
+                rgba(0, 255, 0, 0.1) 0px,
+                rgba(0, 255, 0, 0.1) 1px,
+                transparent 1px,
+                transparent 2px
+            );
             pointer-events: none;
-            z-index: 999;
-            background: linear-gradient(rgba(0, 32, 0, 0.1) 50%, rgba(0, 0, 0, 0.25) 50%),
-                        linear-gradient(90deg, rgba(0, 255, 0, 0.03), rgba(0, 255, 0, 0.01));
-            background-size: 100% 4px, 4px 100%;
-            animation: scanline 0.1s linear infinite;
+            z-index: 1000;
         }
-        #terminal {
-            padding: 2rem;
-            text-shadow: 0 0 8px #00ff0040;
-            position: relative;
-            z-index: 2;
-        }
-        .prompt {
-            color: #00ff00;
-            border-bottom: 2px solid #00ff00;
-            margin: 1rem 0;
-            cursor: pointer;
-        }
-        .sketch-container {
+        .terminal {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
+            color: #0f0;
+            padding: 20px;
+            z-index: 1001;
+            text-shadow: 0 0 8px #0f03;
         }
-        @keyframes scanline {
-            0% { background-position: 0 0; }
+        .return {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            color: #0f0;
+            cursor: pointer;
+            z-index: 9999;
         }
     </style>
 </head>
 <body>
     <div id="crt"></div>
-    <div id="terminal"></div>
-    <audio id="bleep"><source src="https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg" type="audio/ogg"></audio>
+    <div id="main-terminal" class="terminal"></div>
+    <div class="return" onclick="location.reload()">[RETURN TO TERMINAL]</div>
+    <audio id="bleep"><source src="https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg"></audio>
 
     <script>
         const sketches = [
-            { id: "CYBER_PATTERNS", code: "-RG47tNtH", fn: (p) => {
-                // Original sketch code from https://editor.p5js.org/JVA/sketches/-RG47tNtH
-                p.setup = () => {
-                    p.createCanvas(800, 800);
-                    p.noFill();
-                    p.stroke(255);
-                };
-                p.draw = () => {
-                    p.background(0);
-                    for(let i = 0; i < 100; i++) {
-                        p.push();
-                        p.translate(p.width/2, p.height/2);
-                        p.rotate(p.frameCount * 0.002 * i);
-                        p.stroke(p.map(p.sin(p.frameCount*0.01), -1,1, 50,255));
-                        p.rect(0,0, i*10, i*10, i*2);
-                        p.pop();
-                    }
-                };
-            }},
-            // Add similar implementations for other sketches...
+            { code: "CYBER_PATTERNS", init: cyberPatterns },
+            { code: "NEURAL_TOPOGRAPHY", init: neuralTopography },
+            { code: "QUANTUM_STRINGFLOW", init: quantumStringflow },
+            { code: "VOID_GEOMETRY", init: voidGeometry },
+            { code: "DATA_CORRUPTION", init: dataCorruption }
         ];
 
         let currentSketch = null;
 
         function setup() {
-            terminalBootSequence();
+            createCanvas(windowWidth, windowHeight).hide();
+            document.querySelector('.return').style.display = 'none';
+            bootSequence();
             simulateCorruption();
         }
 
-        function terminalBootSequence() {
-            const term = document.getElementById('terminal');
-            let lines = [
-                "INITIALIZING Mjölnir OS v7.4.3...",
-                "MOUNTING /dev/artifacts...",
-                "✓ LOADED Durandal AI Module",
-                "ACCESS LEVEL: BLACK OPERATIVE",
-                `${sketches.length} ARTIFACTS DETECTED:`
+        function bootSequence() {
+            const term = document.getElementById('main-terminal');
+            term.innerHTML = '';
+            
+            const lines = [
+                "INITIALIZING DURANDAL AI...",
+                "DECRYPTING ARTIFACT MANIFEST...",
+                "ACCESS LEVEL: CLASSIFIED",
+                `DETECTED ${sketches.length} ARTIFACTS:`,
+                ...sketches.map((s, i) => `> ${s.code.padEnd(25, ' ')} ${'▮'.repeat(i+1)}`),
+                "\n./access --artifact=ID"
             ];
 
-            sketches.forEach((sketch, i) => {
-                lines.push(`${i+1}. [${sketch.id}] <-- ${"■".repeat(3+i)}-->`);
-            });
-
-            lines.push("\nSELECT ARTIFACT >");
-            
             typewriterEffect(lines.join('\n'), term, () => {
-                sketches.forEach((sketch) => {
-                    const prompt = document.createElement('div');
-                    prompt.className = 'prompt';
-                    prompt.innerHTML = `./access --artifact=${sketch.id}`;
-                    prompt.onclick = () => loadSketch(sketch);
-                    term.appendChild(prompt);
+                sketches.forEach(s => {
+                    const div = document.createElement('div');
+                    div.className = 'prompt';
+                    div.textContent = `LOAD ${s.code}`;
+                    div.onclick = () => {
+                        document.querySelector('.return').style.display = 'block';
+                        term.style.display = 'none';
+                        currentSketch?.remove();
+                        currentSketch = new p5(s.init);
+                    };
+                    term.appendChild(div);
                 });
             });
         }
 
-        function loadSketch(sketch) {
-            document.getElementById('terminal').style.display = 'none';
-            
-            const container = document.createElement('div');
-            container.className = 'sketch-container';
-            document.body.appendChild(container);
-
-            currentSketch = new p5(sketch.fn, container);
-            
-            const returnBtn = document.createElement('div');
-            returnBtn.style.position = 'fixed';
-            returnBtn.style.top = '10px';
-            returnBtn.style.left = '10px';
-            returnBtn.style.color = '#0f0';
-            returnBtn.style.cursor = 'pointer';
-            returnBtn.style.zIndex = '1000';
-            returnBtn.innerHTML = '[RETURN TO TERMINAL]';
-            returnBtn.onclick = () => {
-                currentSketch.remove();
-                container.remove();
-                returnBtn.remove();
-                document.getElementById('terminal').style.display = 'block';
-            };
-            document.body.appendChild(returnBtn);
+        function typewriterEffect(text, container, callback) {
+            let index = 0;
+            const typer = setInterval(() => {
+                container.innerHTML = text.substring(0, index) + (index % 2 ? '_' : '');
+                if(index++ >= text.length) {
+                    clearInterval(typer);
+                    callback?.();
+                }
+                if(index % 3 === 0) document.getElementById('bleep').play();
+            }, 30);
         }
 
-        // Keep previous typewriterEffect and simulateCorruption functions
+        function simulateCorruption() {
+            document.querySelectorAll('.prompt').forEach(el => {
+                if(Math.random() < 0.1) {
+                    el.textContent = el.textContent.replace(/[A-Z]/g, 
+                        c => Math.random() > 0.9 ? String.fromCharCode(65+Math.random()*26) : c);
+                }
+            });
+            requestAnimationFrame(simulateCorruption);
+        }
+
+        // ===== INTEGRATED SKETCHES =====
+        function cyberPatterns(p) {
+            p.setup = () => {
+                p.createCanvas(windowWidth, windowHeight);
+                p.noFill();
+                p.stroke(255, 50);
+            };
+
+            p.draw = () => {
+                p.background(0);
+                for(let i = 0; i < 100; i++) {
+                    p.push();
+                    p.translate(p.width/2, p.height/2);
+                    p.rotate(p.frameCount * 0.001 * i);
+                    p.rect(0, 0, 50*i, 50*i, i*10);
+                    p.pop();
+                }
+            };
+        }
+
+        function neuralTopography(p) {
+            let nodes = [];
+            
+            p.setup = () => {
+                p.createCanvas(windowWidth, windowHeight);
+                for(let i = 0; i < 50; i++) {
+                    nodes.push({
+                        pos: p.createVector(p.random(p.width), p.random(p.height)),
+                        vel: p.createVector(p.random(-1,1), p.random(-1,1))
+                    });
+                }
+            };
+
+            p.draw = () => {
+                p.background(0);
+                nodes.forEach(n => {
+                    n.pos.add(n.vel);
+                    if(n.pos.x < 0 || n.pos.x > p.width) n.vel.x *= -1;
+                    if(n.pos.y < 0 || n.pos.y > p.height) n.vel.y *= -1;
+                    
+                    p.stroke(0, 255, 0);
+                    nodes.forEach(other => {
+                        if(p.dist(n.pos.x, n.pos.y, other.pos.x, other.pos.y) < 100) {
+                            p.line(n.pos.x, n.pos.y, other.pos.x, other.pos.y);
+                        }
+                    });
+                });
+            };
+        }
+
+        function quantumStringflow(p) {
+            p.setup = () => {
+                p.createCanvas(windowWidth, windowHeight);
+                p.background(0);
+            };
+
+            p.draw = () => {
+                p.stroke(0, 255, 0, 50);
+                p.translate(p.width/2, p.height/2);
+                p.rotate(p.frameCount * 0.01);
+                p.line(
+                    p.cos(p.frameCount) * 100,
+                    p.sin(p.frameCount) * 100,
+                    p.cos(p.frameCount * 0.9) * 200,
+                    p.sin(p.frameCount * 0.8) * 200
+                );
+            };
+        }
+
+        function voidGeometry(p) {
+            let angle = 0;
+
+            p.setup = () => {
+                p.createCanvas(windowWidth, windowHeight);
+                p.noFill();
+                p.stroke(0, 255, 0);
+            };
+
+            p.draw = () => {
+                p.background(0);
+                p.translate(p.width/2, p.height/2);
+                angle += 0.02;
+                
+                for(let i = 0; i < 50; i++) {
+                    p.push();
+                    p.rotate(angle + p.radians(i * 7));
+                    p.rect(0, 0, 100 + i * 10, 100 + i * 10, i * 2);
+                    p.pop();
+                }
+            };
+        }
+
+        function dataCorruption(p) {
+            p.setup = () => {
+                p.createCanvas(windowWidth, windowHeight);
+                p.textFont('Courier New');
+                p.textSize(32);
+                p.fill(0, 255, 0);
+            };
+
+            p.draw = () => {
+                p.background(0);
+                p.textAlign(p.CENTER, p.CENTER);
+                p.text(
+                    String.fromCharCode(0x20 + Math.random() * 0x60),
+                    p.width/2 + p.random(-10,10),
+                    p.height/2 + p.random(-10,10)
+                );
+            };
+        }
     </script>
 </body>
 </html>
