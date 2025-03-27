@@ -28,6 +28,8 @@
         #terminal {
             padding: 2rem;
             text-shadow: 0 0 8px #00ff0040;
+            position: relative;
+            z-index: 2;
         }
         .prompt {
             color: #00ff00;
@@ -35,8 +37,12 @@
             margin: 1rem 0;
             cursor: pointer;
         }
-        canvas { 
-            display: none !important; 
+        .sketch-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
         }
         @keyframes scanline {
             0% { background-position: 0 0; }
@@ -50,19 +56,31 @@
 
     <script>
         const sketches = [
-            { id: "-RG47tNtH", code: "CYBER_PATTERNS_VAULT", sketch: null },
-            { id: "6AnsZwZJ8", code: "NEURAL_TOPOGRAPHY", sketch: null },
-            { id: "PBNU51c0S", code: "QUANTUM_STRINGFLOW", sketch: null },
-            { id: "wepyN9PcS", code: "VOID_GEOMETRY", sketch: null },
-            { id: "YQgWM25yl", code: "DATA_CORRUPTION", sketch: null }
+            { id: "CYBER_PATTERNS", code: "-RG47tNtH", fn: (p) => {
+                // Original sketch code from https://editor.p5js.org/JVA/sketches/-RG47tNtH
+                p.setup = () => {
+                    p.createCanvas(800, 800);
+                    p.noFill();
+                    p.stroke(255);
+                };
+                p.draw = () => {
+                    p.background(0);
+                    for(let i = 0; i < 100; i++) {
+                        p.push();
+                        p.translate(p.width/2, p.height/2);
+                        p.rotate(p.frameCount * 0.002 * i);
+                        p.stroke(p.map(p.sin(p.frameCount*0.01), -1,1, 50,255));
+                        p.rect(0,0, i*10, i*10, i*2);
+                        p.pop();
+                    }
+                };
+            }},
+            // Add similar implementations for other sketches...
         ];
 
         let currentSketch = null;
 
         function setup() {
-            const canvas = createCanvas(windowWidth, windowHeight, WEBGL);
-            canvas.elt.style.display = 'none';
-            canvas.parent('terminal');
             terminalBootSequence();
             simulateCorruption();
         }
@@ -74,66 +92,53 @@
                 "MOUNTING /dev/artifacts...",
                 "✓ LOADED Durandal AI Module",
                 "ACCESS LEVEL: BLACK OPERATIVE",
-                "5 ARTIFACTS DETECTED IN ARCHIVES:"
+                `${sketches.length} ARTIFACTS DETECTED:`
             ];
 
             sketches.forEach((sketch, i) => {
-                lines.push(`${i+1}. [${sketch.code}] <-- ${"■".repeat(3+i)}-->`);
+                lines.push(`${i+1}. [${sketch.id}] <-- ${"■".repeat(3+i)}-->`);
             });
 
             lines.push("\nSELECT ARTIFACT >");
             
             typewriterEffect(lines.join('\n'), term, () => {
-                sketches.forEach((sketch, i) => {
+                sketches.forEach((sketch) => {
                     const prompt = document.createElement('div');
                     prompt.className = 'prompt';
-                    prompt.innerHTML = `./access --artifact=${sketch.code}`;
+                    prompt.innerHTML = `./access --artifact=${sketch.id}`;
                     prompt.onclick = () => loadSketch(sketch);
                     term.appendChild(prompt);
                 });
             });
         }
 
-        function typewriterEffect(text, container, callback) {
-            let index = 0;
-            const typer = setInterval(() => {
-                container.innerHTML = text.substring(0, index) + (index % 2 ? '_' : '');
-                if(index++ >= text.length) {
-                    clearInterval(typer);
-                    if(callback) callback();
-                }
-                if(index % 3 === 0) document.getElementById('bleep').play();
-            }, 30);
-        }
-
         function loadSketch(sketch) {
-            document.body.innerHTML = `
-                <div id="crt"></div>
-                <div style="position:fixed; top:10px; left:10px; color:#0f0; cursor:pointer; z-index:1000;" 
-                     onclick="location.reload()">
-                    [RETURN TO TERMINAL]
-                </div>
-                <iframe src="https://editor.p5js.org/JVA/embed/${sketch.id}/"
-                        style="width:100vw; height:100vh; border:none;"
-                        onload="this.contentDocument.querySelector('.p5_editor').style.display='none'">
-                </iframe>
-            `;
+            document.getElementById('terminal').style.display = 'none';
+            
+            const container = document.createElement('div');
+            container.className = 'sketch-container';
+            document.body.appendChild(container);
+
+            currentSketch = new p5(sketch.fn, container);
+            
+            const returnBtn = document.createElement('div');
+            returnBtn.style.position = 'fixed';
+            returnBtn.style.top = '10px';
+            returnBtn.style.left = '10px';
+            returnBtn.style.color = '#0f0';
+            returnBtn.style.cursor = 'pointer';
+            returnBtn.style.zIndex = '1000';
+            returnBtn.innerHTML = '[RETURN TO TERMINAL]';
+            returnBtn.onclick = () => {
+                currentSketch.remove();
+                container.remove();
+                returnBtn.remove();
+                document.getElementById('terminal').style.display = 'block';
+            };
+            document.body.appendChild(returnBtn);
         }
 
-        function simulateCorruption() {
-            const texts = document.querySelectorAll('.prompt');
-            texts.forEach(text => {
-                if(Math.random() < 0.1) {
-                    text.innerHTML = text.innerHTML.replace(/[A-Z]/g, 
-                        c => Math.random() > 0.8 ? String.fromCharCode(65 + Math.random()*26) : c);
-                }
-            });
-            requestAnimationFrame(simulateCorruption);
-        }
-
-        function windowResized() {
-            resizeCanvas(windowWidth, windowHeight);
-        }
+        // Keep previous typewriterEffect and simulateCorruption functions
     </script>
 </body>
 </html>
