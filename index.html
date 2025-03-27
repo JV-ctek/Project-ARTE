@@ -35,6 +35,9 @@
             margin: 1rem 0;
             cursor: pointer;
         }
+        canvas { 
+            display: none !important; 
+        }
         @keyframes scanline {
             0% { background-position: 0 0; }
         }
@@ -43,17 +46,25 @@
 <body>
     <div id="crt"></div>
     <div id="terminal"></div>
+    <audio id="bleep"><source src="https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg" type="audio/ogg"></audio>
 
     <script>
         const sketches = [
-            { id: "-RG47tNtH", code: "CYBER_PATTERNS_VAULT" },
-            { id: "6AnsZwZJ8", code: "NEURAL_TOPOGRAPHY" },
-            { id: "PBNU51c0S", code: "QUANTUM_STRINGFLOW" }
+            { id: "-RG47tNtH", code: "CYBER_PATTERNS_VAULT", sketch: null },
+            { id: "6AnsZwZJ8", code: "NEURAL_TOPOGRAPHY", sketch: null },
+            { id: "PBNU51c0S", code: "QUANTUM_STRINGFLOW", sketch: null },
+            { id: "wepyN9PcS", code: "VOID_GEOMETRY", sketch: null },
+            { id: "YQgWM25yl", code: "DATA_CORRUPTION", sketch: null }
         ];
 
+        let currentSketch = null;
+
         function setup() {
-            createCanvas(windowWidth, windowHeight).hide();
+            const canvas = createCanvas(windowWidth, windowHeight, WEBGL);
+            canvas.elt.style.display = 'none';
+            canvas.parent('terminal');
             terminalBootSequence();
+            simulateCorruption();
         }
 
         function terminalBootSequence() {
@@ -61,9 +72,9 @@
             let lines = [
                 "INITIALIZING Mjölnir OS v7.4.3...",
                 "MOUNTING /dev/artifacts...",
-                "✓ LOADED Tycho AI Module",
+                "✓ LOADED Durandal AI Module",
                 "ACCESS LEVEL: BLACK OPERATIVE",
-                "3 ARTIFACTS DETECTED IN ARCHIVES:"
+                "5 ARTIFACTS DETECTED IN ARCHIVES:"
             ];
 
             sketches.forEach((sketch, i) => {
@@ -77,7 +88,7 @@
                     const prompt = document.createElement('div');
                     prompt.className = 'prompt';
                     prompt.innerHTML = `./access --artifact=${sketch.code}`;
-                    prompt.onclick = () => loadSketch(sketch.id);
+                    prompt.onclick = () => loadSketch(sketch);
                     term.appendChild(prompt);
                 });
             });
@@ -91,20 +102,37 @@
                     clearInterval(typer);
                     if(callback) callback();
                 }
+                if(index % 3 === 0) document.getElementById('bleep').play();
             }, 30);
         }
 
-        function loadSketch(sketchId) {
+        function loadSketch(sketch) {
             document.body.innerHTML = `
                 <div id="crt"></div>
-                <div style="position:fixed; top:10px; left:10px; color:#0f0; cursor:pointer;" 
+                <div style="position:fixed; top:10px; left:10px; color:#0f0; cursor:pointer; z-index:1000;" 
                      onclick="location.reload()">
                     [RETURN TO TERMINAL]
                 </div>
-                <iframe src="https://editor.p5js.org/JVA/embed/${sketchId}"
-                        style="width:100vw; height:100vh; border:none;">
+                <iframe src="https://editor.p5js.org/JVA/embed/${sketch.id}/"
+                        style="width:100vw; height:100vh; border:none;"
+                        onload="this.contentDocument.querySelector('.p5_editor').style.display='none'">
                 </iframe>
             `;
+        }
+
+        function simulateCorruption() {
+            const texts = document.querySelectorAll('.prompt');
+            texts.forEach(text => {
+                if(Math.random() < 0.1) {
+                    text.innerHTML = text.innerHTML.replace(/[A-Z]/g, 
+                        c => Math.random() > 0.8 ? String.fromCharCode(65 + Math.random()*26) : c);
+                }
+            });
+            requestAnimationFrame(simulateCorruption);
+        }
+
+        function windowResized() {
+            resizeCanvas(windowWidth, windowHeight);
         }
     </script>
 </body>
