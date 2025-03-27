@@ -2,130 +2,101 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>//_SYSTEM_ARCHIVES</title>
+    <title>//_SYSTEM_PORTFOLIO_ACCESS</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
     <style>
-        /* Add this CSS to hide p5.js watermark */
-        .p5 > div:last-child {
-            display: none !important;
+        /* ... (keep previous styles) ... */
+        #skip {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            color: #00ff00;
+            cursor: pointer;
+            opacity: 0.5;
+            transition: opacity 0.3s;
         }
-        /* Keep previous CRT styles */
+        #skip:hover {
+            opacity: 1;
+        }
     </style>
 </head>
 <body>
     <div id="crt"></div>
     <div id="terminal"></div>
-    
+    <div id="skip" onclick="skipBoot()">[CLICK TO BYPASS INIT]</div>
+
     <script>
-        // Updated sketch list with all 5 projects
         const sketches = [
-            { id: 1, code: "PATTERN_ASSAULT", init: initPatternAssault },
-            { id: 2, code: "NEUROTOPOGRAPHY", init: initNeuroTopography },
-            { id: 3, code: "STRINGFLOW", init: initStringFlow },
-            { id: 4, code: "GEOMETRIC_INSURGENCY", init: initGeometricInsurgency },
-            { id: 5, code: "WAVE_COLLAPSE", init: initWaveCollapse }
+            { id: "-RG47tNtH", code: "CYBER_PATTERNS_VAULT" },
+            { id: "6AnsZwZJ8", code: "NEURAL_TOPOGRAPHY" },
+            { id: "PBNU51c0S", code: "QUANTUM_STRINGFLOW" },
+            { id: "wepyN9PcS", code: "OPTICAL_DECONSTRUCT" },
+            { id: "YQgWM25yl", code: "VECTOR_ECOSYSTEM" }
         ];
 
-        // Add sketch initialization functions here
-        // =================================================================
-        // Sketch 1: Pattern Assault (Original -RG47tNtH)
-        function initPatternAssault(p5) {
-            let rotation = 0;
-            
-            p5.setup = () => {
-                p5.createCanvas(800, 800, p5.WEBGL);
-                p5.noStroke();
-            };
-
-            p5.draw = () => {
-                p5.background(0);
-                p5.rotateY(rotation);
-                for(let i = 0; i < 50; i++) {
-                    p5.push();
-                    p5.rotateZ(p5.frameCount * 0.01 * i);
-                    p5.fill(p5.map(i, 0, 50, 255, 0), 150, 250);
-                    p5.box(50 + i * 5, 10, 10);
-                    p5.pop();
-                }
-                rotation += 0.01;
-            };
-        }
-
-        // Sketch 2: Neuro Topography (Original 6AnsZwZJ8)
-        function initNeuroTopography(p5) {
-            // ... include original sketch code wrapped in p5 instance...
-        }
-
-        // Continue with other sketches similarly...
-        // =================================================================
-
-        // Terminal System Code
-        let currentSketch = null;
+        let bootCompleted = false;
+        let typewriterInterval;
 
         function setup() {
             createCanvas(windowWidth, windowHeight).hide();
             terminalBootSequence();
+            setInterval(simulateCorruption, 1000);
+        }
+
+        function skipBoot() {
+            if (!bootCompleted) {
+                clearInterval(typewriterInterval);
+                const term = document.getElementById('terminal');
+                term.innerHTML = '';
+                sketches.forEach(createPrompt);
+                bootCompleted = true;
+                document.getElementById('skip').style.display = 'none';
+            }
+        }
+
+        function createPrompt(sketch) {
+            const prompt = document.createElement('div');
+            prompt.className = 'prompt';
+            prompt.innerHTML = `./access --artifact=${sketch.code}`;
+            prompt.onclick = () => loadSketch(sketch.id);
+            document.getElementById('terminal').appendChild(prompt);
         }
 
         function terminalBootSequence() {
-            // Update with 5 entries
+            const term = document.getElementById('terminal');
             let lines = [
                 "INITIALIZING Mjölnir OS v7.4.3...",
-                "DECRYPTING ARCHIVES...",
-                "✓ LOADED Durandal AI Module",
+                "MOUNTING /dev/artifacts...",
+                "✓ LOADED Tycho AI Module",
                 "ACCESS LEVEL: BLACK OPERATIVE",
-                "5 CLASSIFIED ARTIFACTS FOUND:"
+                `${sketches.length} ARTIFACTS DETECTED IN ARCHIVES:`
             ];
 
             sketches.forEach((sketch, i) => {
-                lines.push(`${i+1}. [${sketch.code}] <-- ${"▉".repeat(i+2)}-->`);
+                lines.push(`${i+1}. [${sketch.code}] <-- ${"■".repeat(3+i%3)}-->`);
             });
 
             lines.push("\nSELECT ARTIFACT >");
             
-            typewriterEffect(lines.join('\n'), document.getElementById('terminal'), () => {
-                sketches.forEach(sketch => {
-                    const prompt = document.createElement('div');
-                    prompt.className = 'prompt';
-                    prompt.innerHTML = `./decrypt --artifact=${sketch.code}`;
-                    prompt.onclick = () => loadSketch(sketch);
-                    document.getElementById('terminal').appendChild(prompt);
-                });
+            typewriterEffect(lines.join('\n'), term, () => {
+                sketches.forEach(createPrompt);
+                bootCompleted = true;
+                document.getElementById('skip').style.display = 'none';
             });
         }
 
-        function loadSketch(sketch) {
-            document.getElementById('terminal').style.display = 'none';
-            
-            // Create sketch container
-            const container = document.createElement('div');
-            container.id = `sketch-${sketch.id}`;
-            container.style.position = 'fixed';
-            container.style.top = '0';
-            container.style.left = '0';
-            document.body.appendChild(container);
-
-            // Initialize p5 instance
-            currentSketch = new p5(sketch.init, container);
-
-            // Create return interface
-            const returnUI = document.createElement('div');
-            returnUI.style.position = 'fixed';
-            returnUI.style.top = '10px';
-            returnUI.style.left = '10px';
-            returnUI.style.color = '#0f0';
-            returnUI.style.cursor = 'pointer';
-            returnUI.innerHTML = '[TERMINATE SIMULATION]';
-            returnUI.onclick = () => {
-                currentSketch.remove();
-                container.remove();
-                returnUI.remove();
-                document.getElementById('terminal').style.display = 'block';
-            };
-            document.body.appendChild(returnUI);
+        function typewriterEffect(text, container, callback) {
+            let index = 0;
+            typewriterInterval = setInterval(() => {
+                container.innerHTML = text.substring(0, index) + (index % 2 ? '_' : '');
+                if(index++ >= text.length) {
+                    clearInterval(typewriterInterval);
+                    if(callback) callback();
+                }
+            }, 30);
         }
 
-        // Keep previous helper functions...
+        /* ... (keep remaining functions unchanged) ... */
     </script>
 </body>
 </html>
